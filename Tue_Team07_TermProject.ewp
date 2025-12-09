@@ -347,6 +347,7 @@
                     <state>$PROJ_DIR$\Libraries\STM32F10x_StdPeriph_Driver_v3.5\src</state>
                     <state>$PROJ_DIR$\user</state>
                     <state>$PROJ_DIR$\user\inc</state>
+                    <state>$PROJ_DIR$\Libraries\LCD</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2076,6 +2077,24 @@
             </group>
         </group>
         <group>
+            <name>LCD</name>
+            <file>
+                <name>$PROJ_DIR$\Libraries\LCD\font.h</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\Libraries\LCD\lcd.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\Libraries\LCD\lcd.h</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\Libraries\LCD\touch.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\Libraries\LCD\touch.h</name>
+            </file>
+        </group>
+        <group>
             <name>STM32F10x_StdPeriph_Driver_v3.5</name>
             <group>
                 <name>inc</name>
@@ -2234,12 +2253,6 @@
                 <name>$PROJ_DIR$\user\inc\rc522.h</name>
             </file>
             <file>
-                <name>$PROJ_DIR$\user\inc\ssd1306.h</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\user\inc\ssd1306_fonts.h</name>
-            </file>
-            <file>
                 <name>$PROJ_DIR$\user\inc\stm32f10x_conf.h</name>
             </file>
             <file>
@@ -2254,12 +2267,6 @@
         </file>
         <file>
             <name>$PROJ_DIR$\user\rc522.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\user\ssd1306.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\user\ssd1306_fonts.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\user\stm32f10x_it.c</name>
