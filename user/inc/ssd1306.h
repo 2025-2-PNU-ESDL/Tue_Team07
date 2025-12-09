@@ -10,9 +10,11 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <_ansi.h>
+// #include <_ansi.h>
 
-_BEGIN_STD_C
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // #include "ssd1306_conf.h"
 #include "stm32f10x.h"
@@ -163,6 +165,8 @@ void ssd1306_WriteCommand(uint8_t byte);
 void ssd1306_WriteData(uint8_t* buffer, size_t buff_size);
 SSD1306_Error_t ssd1306_FillBuffer(uint8_t* buf, uint32_t len);
 
-_END_STD_C
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __SSD1306_H__
