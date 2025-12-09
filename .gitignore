@@ -13,14 +13,14 @@ thumbs.db
 *.~*
 
 # IAR Settings  
-**/settings/*.crun  
-**/settings/*.dbgdt  
-**/settings/*.cspy  
-**/settings/*.cspy.*  
-**/settings/*.xcl  
-**/settings/*.dni  
-**/settings/*.wsdt  
-**/settings/*.wspos  
+#**/settings/*.crun  
+#**/settings/*.dbgdt  
+#**/settings/*.cspy  
+#**/settings/*.cspy.*  
+#**/settings/*.xcl  
+#**/settings/*.dni  
+#**/settings/*.wsdt  
+#**/settings/*.wspos  
 
 # IAR Debug Exe  
 **/Exe/*.sim  
@@ -38,10 +38,11 @@ Debug/
 Release/
 
 # IAR project settings directory
-settings/
+#settings/
 
 # IAR backup files
 Backup*
 
 # IAR .dep files
+
 *.dep
