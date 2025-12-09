@@ -206,7 +206,7 @@ void DS3231_WriteBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
 void DS3231_Init(RTC_TimeTypeDef *rtc_time) {
     DS3231_I2C_Error = 0;
 
-    rtc_time->seconds    = 50;
+    rtc_time->seconds    = 45;
     rtc_time->minutes    = 59;   // 여기에 실제 분
     rtc_time->hours      = 8;   // 여기에 실제 시 (24시간제)
     rtc_time->dayofweek  = 3;    // 1~7 아무거나

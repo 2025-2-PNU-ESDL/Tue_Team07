@@ -1,6 +1,7 @@
 #include "stm32f10x.h"
 #include "rc522.h"
 #include "ds3231.h"
+#include "lcd.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -64,8 +65,11 @@ int main(void)
     {
         while (1);
     }
+    
+    DS3231_ResetI2CError();
 
     // Module Init
+    LCD_Init();
     DS3231_Init(&sTime);
     DS3231_SetTime(&sTime);
     
@@ -73,6 +77,7 @@ int main(void)
 
     // RTC Alarm Setup (Example: 09:00:00)
     DS3231_SetAlarm1(9, 0, 0);
+    DS3231_SetAlarm2(9, 2);
     DS3231_ClearAlarmFlags();
 
     // I2C 에러 확인
@@ -89,8 +94,20 @@ int main(void)
     // Power-on beep
     Beep(3);
 
+    static uint8_t prev_sec = 0xFF; 
+
     while (1)
     {
+        // 0. Continuous Time Update (Non-blocking)
+        // This ensures time updates even during active polling, without Delay(1000) blocking
+        DS3231_GetTime(&sTime);
+        if (sTime.seconds != prev_sec) {
+            prev_sec = sTime.seconds;
+            char time_str[20];
+            sprintf(time_str, "%02d:%02d:%02d", sTime.hours, sTime.minutes, sTime.seconds);
+            LCD_ShowString(30, 130, (uint8_t*)time_str, BLACK, WHITE);
+        }
+
         // A. RTC Alarm Handling
         if (rtc_alarm_flag) {
             rtc_alarm_flag = 0;
@@ -109,7 +126,7 @@ int main(void)
                 }
             }
             // End Attendance (10:00)
-            else if (sTime.hours == 10 && sTime.minutes == 0) {
+            if (sTime.hours == 9 && sTime.minutes == 2) {
                 system_active = 0;
                 Display_Idle_Screen();
                 Beep(3);
@@ -148,15 +165,25 @@ int main(void)
                 if (user_idx != -1) {
                     char status[10];
 
+                    // LCD Display
+                    LCD_Clear(WHITE);
+                    LCD_ShowString(20, 20, (uint8_t*)db[user_idx].name, BLACK, WHITE);
+                    
+                    char time_str[20];
+                    sprintf(time_str, "%02d:%02d:%02d", sTime.hours, sTime.minutes, sTime.seconds);
+                    LCD_ShowString(20, 50, (uint8_t*)time_str, BLACK, WHITE);
+
                     // Late logic
-                    if (sTime.hours > 9 || (sTime.hours == 9 && sTime.minutes > 10)) {
+                    if (sTime.hours >= 9 && sTime.minutes >= 1) {
                         strcpy(status, "LATE");
                         GPIO_SetBits(GPIOB, GPIO_Pin_0); // Red LED
                         Beep(2);
+                        LCD_ShowString(20, 80, (uint8_t*)"Status: LATE", RED, WHITE);
                     } else {
                         strcpy(status, "OK");
                         GPIO_SetBits(GPIOB, GPIO_Pin_1); // Green LED
                         Beep(1);
+                        LCD_ShowString(20, 80, (uint8_t*)"Status: OK", GREEN, WHITE);
                     }
 
                     // UART 로그: Name, UID, Time, Status
@@ -175,6 +202,12 @@ int main(void)
                     Beep(1);
                     GPIO_SetBits(GPIOB, GPIO_Pin_0 | GPIO_Pin_1); // Yellow
 
+                    LCD_Clear(WHITE);
+                    LCD_ShowString(20, 20, (uint8_t*)"UNKNOWN TAG", RED, WHITE);
+                    char uid_disp[20];
+                    sprintf(uid_disp, "UID: %s", uid_str);
+                    LCD_ShowString(20, 50, (uint8_t*)uid_disp, BLACK, WHITE);
+
                     // UART 로그: UNKNOWN,UID,Time
                     char uart_buff[80];
                     sprintf(uart_buff, "UNKNOWN,%s,%02d:%02d\r\n",
@@ -189,6 +222,10 @@ int main(void)
                 // 잠깐 LED 켰다가 끄기
                 Delay(500);
                 GPIO_ResetBits(GPIOB, GPIO_Pin_0 | GPIO_Pin_1);
+                
+                // Return to Idle Screen
+                Delay(1000);
+                Display_Idle_Screen();
             }
 
             // 너무 빡세게 폴링하지 않게 약간 쉬어주기
@@ -239,17 +276,6 @@ int main(void)
             }
         }
         
-    //   DS3231_GetTime(&sTime);
-    //   // "SYSTEM IDLE" + 현재 시각 로그로 출력
-    //   char msg[64];
-    //   sprintf(msg, "SYSTEM IDLE %02d:%02d:%02d (err=%d)\r\n",
-    //           sTime.hours, sTime.minutes, sTime.seconds, DS3231_GetI2CError());
-
-    //   for (int k = 0; k < (int)strlen(msg); k++) {
-    //       USART_SendData(USART1, msg[k]);
-    //       while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-    //   }
-    //   Delay(100);
     }
 }
 
@@ -271,7 +297,15 @@ void Display_Idle_Screen(void)
     DS3231_ResetI2CError();
     DS3231_GetTime(&sTime);
 
-    // "SYSTEM IDLE" + 현재 시각 로그로 출력
+    LCD_Clear(WHITE);
+    LCD_ShowString(30, 100, (uint8_t*)"READY", BLUE, WHITE);
+    
+    // Initial time display.
+    char time_str[20];
+    sprintf(time_str, "%02d:%02d:%02d", sTime.hours, sTime.minutes, sTime.seconds);
+    LCD_ShowString(30, 130, (uint8_t*)time_str, BLACK, WHITE);
+
+    // "SYSTEM IDLE" + 현재 시각 로그로 출력 (for UART debugging)
     char msg[64];
     sprintf(msg, "SYSTEM IDLE %02d:%02d:%02d (err=%d)\r\n",
             sTime.hours, sTime.minutes, sTime.seconds, DS3231_GetI2CError());

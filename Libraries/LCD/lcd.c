@@ -16,20 +16,30 @@ uint16_t DeviceCode;
 
 static void LCD_WR_REG(uint16_t LCD_Reg)
 {
-	// TODO implement using GPIO_ResetBits/GPIO_SetBits
-	
+	GPIO_ResetBits(GPIOC, GPIO_Pin_8);
+	GPIO_ResetBits(GPIOD, GPIO_Pin_13);
+	GPIO_SetBits(GPIOD, GPIO_Pin_15);
+
 	GPIO_Write(GPIOE, LCD_Reg);
-	// TODO implement using GPIO_ResetBits/GPIO_SetBits
-	
+
+	GPIO_ResetBits(GPIOB, GPIO_Pin_14);
+	GPIO_SetBits(GPIOB, GPIO_Pin_14);
+
+	GPIO_SetBits(GPIOC, GPIO_Pin_8);
 }
 
 static void LCD_WR_DATA(uint16_t LCD_Data)
 {
-	// TODO implement using GPIO_ResetBits/GPIO_SetBits
-	
+	GPIO_ResetBits(GPIOC, GPIO_Pin_8);
+	GPIO_SetBits(GPIOD, GPIO_Pin_13);
+	GPIO_SetBits(GPIOD, GPIO_Pin_15);
+
 	GPIO_Write(GPIOE, LCD_Data);
-	// TODO implement using GPIO_ResetBits/GPIO_SetBits
-	
+
+	GPIO_ResetBits(GPIOB, GPIO_Pin_14);
+	GPIO_SetBits(GPIOB, GPIO_Pin_14);
+
+	GPIO_SetBits(GPIOC, GPIO_Pin_8);
 }
 
 static uint16_t LCD_ReadReg(uint16_t LCD_Reg)
