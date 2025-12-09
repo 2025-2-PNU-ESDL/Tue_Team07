@@ -3,6 +3,14 @@
 
 #include "ssd1306.h"
 
+// Enable Fonts
+#define SSD1306_INCLUDE_FONT_6x8
+#define SSD1306_INCLUDE_FONT_7x10
+#define SSD1306_INCLUDE_FONT_11x18
+// #define SSD1306_INCLUDE_FONT_16x26
+// #define SSD1306_INCLUDE_FONT_16x24
+// #define SSD1306_INCLUDE_FONT_16x15
+
 #ifdef SSD1306_INCLUDE_FONT_6x8
 extern const SSD1306_Font_t Font_6x8;
 #endif
