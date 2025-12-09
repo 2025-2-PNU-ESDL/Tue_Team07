@@ -10,48 +10,85 @@ extern void Delay(__IO uint32_t nTime);
 // Assumed I2C1 from main.c
 #define SSD1306_I2C I2C1
 
+#define SSD1306_TIMEOUT 20000
+static uint8_t SSD1306_I2C_Error = 0;
+
 void ssd1306_Reset(void) {
     /* for I2C - do nothing */
 }
 
 // Send a byte to the command register
 void ssd1306_WriteCommand(uint8_t byte) {
-    while(I2C_GetFlagStatus(SSD1306_I2C, I2C_FLAG_BUSY));
+    if (SSD1306_I2C_Error) return;
+
+    uint32_t timeout = SSD1306_TIMEOUT;
+    while(I2C_GetFlagStatus(SSD1306_I2C, I2C_FLAG_BUSY)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     I2C_GenerateSTART(SSD1306_I2C, ENABLE);
-    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = SSD1306_TIMEOUT;
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     I2C_Send7bitAddress(SSD1306_I2C, SSD1306_I2C_ADDR, I2C_Direction_Transmitter);
-    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    timeout = SSD1306_TIMEOUT;
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     // Control Byte (0x00 for Command)
     I2C_SendData(SSD1306_I2C, 0x00);
-    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = SSD1306_TIMEOUT;
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     // Command
     I2C_SendData(SSD1306_I2C, byte);
-    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = SSD1306_TIMEOUT;
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     I2C_GenerateSTOP(SSD1306_I2C, ENABLE);
 }
 
 // Send data
 void ssd1306_WriteData(uint8_t* buffer, size_t buff_size) {
-    while(I2C_GetFlagStatus(SSD1306_I2C, I2C_FLAG_BUSY));
+    if (SSD1306_I2C_Error) return;
+
+    uint32_t timeout = SSD1306_TIMEOUT;
+    while(I2C_GetFlagStatus(SSD1306_I2C, I2C_FLAG_BUSY)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     I2C_GenerateSTART(SSD1306_I2C, ENABLE);
-    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = SSD1306_TIMEOUT;
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     I2C_Send7bitAddress(SSD1306_I2C, SSD1306_I2C_ADDR, I2C_Direction_Transmitter);
-    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    timeout = SSD1306_TIMEOUT;
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     // Control Byte (0x40 for Data)
     I2C_SendData(SSD1306_I2C, 0x40);
-    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = SSD1306_TIMEOUT;
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+    }
 
     for(size_t i=0; i<buff_size; i++) {
         I2C_SendData(SSD1306_I2C, buffer[i]);
-        while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+        timeout = SSD1306_TIMEOUT;
+        while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+            if((timeout--) == 0) { SSD1306_I2C_Error = 1; return; }
+        }
     }
 
     I2C_GenerateSTOP(SSD1306_I2C, ENABLE);

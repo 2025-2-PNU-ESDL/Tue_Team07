@@ -14,26 +14,43 @@
 uint8_t decToBcd(int val) { return (uint8_t)( (val/10*16) + (val%10) ); }
 int bcdToDec(uint8_t val) { return (int)( (val/16*10) + (val%16) ); }
 
+#define DS3231_TIMEOUT 20000
+static uint8_t DS3231_I2C_Error = 0;
+
 // Low-level I2C Write
 void DS3231_WriteReg(uint8_t reg, uint8_t val) {
-    // Wait until I2C is not busy
-    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+    if (DS3231_I2C_Error) return;
 
-    // Generate Start
+    uint32_t timeout = DS3231_TIMEOUT;
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
+
     I2C_GenerateSTART(DS3231_I2C, ENABLE);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
-    // Send Address (Write)
     I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     // Send Register Address
     I2C_SendData(DS3231_I2C, reg);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     // Send Value
     I2C_SendData(DS3231_I2C, val);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     // Generate Stop
     I2C_GenerateSTOP(DS3231_I2C, ENABLE);
@@ -41,29 +58,52 @@ void DS3231_WriteReg(uint8_t reg, uint8_t val) {
 
 // Low-level I2C Read
 uint8_t DS3231_ReadReg(uint8_t reg) {
-    uint8_t val;
+    if (DS3231_I2C_Error) return 0;
     
-    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+    uint8_t val = 0;
+    uint32_t timeout = DS3231_TIMEOUT;
+    
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return 0; }
+    }
 
     I2C_GenerateSTART(DS3231_I2C, ENABLE);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return 0; }
+    }
 
     I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return 0; }
+    }
 
     I2C_SendData(DS3231_I2C, reg);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return 0; }
+    }
 
     I2C_GenerateSTART(DS3231_I2C, ENABLE);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return 0; }
+    }
 
     I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Receiver);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return 0; }
+    }
 
     I2C_AcknowledgeConfig(DS3231_I2C, DISABLE);
     I2C_GenerateSTOP(DS3231_I2C, ENABLE);
 
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_RECEIVED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_RECEIVED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return 0; }
+    }
     val = I2C_ReceiveData(DS3231_I2C);
     
     I2C_AcknowledgeConfig(DS3231_I2C, ENABLE);
@@ -73,22 +113,42 @@ uint8_t DS3231_ReadReg(uint8_t reg) {
 
 // Burst Read
 void DS3231_ReadBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
-    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+    if (DS3231_I2C_Error) return;
+
+    uint32_t timeout = DS3231_TIMEOUT;
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_GenerateSTART(DS3231_I2C, ENABLE);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_SendData(DS3231_I2C, reg);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_GenerateSTART(DS3231_I2C, ENABLE);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Receiver);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     for(int i = 0; i < count; i++) {
         if(i == count - 1) {
@@ -96,7 +156,10 @@ void DS3231_ReadBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
             I2C_GenerateSTOP(DS3231_I2C, ENABLE);
         }
         
-        while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_RECEIVED));
+        timeout = DS3231_TIMEOUT;
+        while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_RECEIVED)) {
+            if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+        }
         buf[i] = I2C_ReceiveData(DS3231_I2C);
     }
     I2C_AcknowledgeConfig(DS3231_I2C, ENABLE);
@@ -104,20 +167,37 @@ void DS3231_ReadBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
 
 // Burst Write (Used for Time Set)
 void DS3231_WriteBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
-    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+    if (DS3231_I2C_Error) return;
+
+    uint32_t timeout = DS3231_TIMEOUT;
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_GenerateSTART(DS3231_I2C, ENABLE);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     I2C_SendData(DS3231_I2C, reg);
-    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    timeout = DS3231_TIMEOUT;
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+        if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+    }
 
     for(int i=0; i<count; i++) {
         I2C_SendData(DS3231_I2C, buf[i]);
-        while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+        timeout = DS3231_TIMEOUT;
+        while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+            if((timeout--) == 0) { DS3231_I2C_Error = 1; return; }
+        }
     }
     
     I2C_GenerateSTOP(DS3231_I2C, ENABLE);
