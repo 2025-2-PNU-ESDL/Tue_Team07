@@ -1,25 +1,136 @@
 #include "ds3231.h"
+#include "stm32f10x.h"
 
-// CubeMX에서 설정한 I2C 핸들러를 가져옴
-extern I2C_HandleTypeDef hi2c1; 
+// Define I2C Interface
+#define DS3231_I2C I2C1
 
-// 레지스터 주소 정의
+// Register Definitions
 #define DS3231_CONTROL_REG 0x0E
 #define DS3231_STATUS_REG  0x0F
 #define DS3231_ALARM1_ADDR 0x07
 #define DS3231_ALARM2_ADDR 0x0B
 
-// BCD 변환 함수 (내부용)
+// Helper Functions
 uint8_t decToBcd(int val) { return (uint8_t)( (val/10*16) + (val%10) ); }
 int bcdToDec(uint8_t val) { return (int)( (val/16*10) + (val%16) ); }
 
-void DS3231_Init(I2C_HandleTypeDef *hi2c) {
-    // 필요 시 초기 설정 (대부분 불필요)
+// Low-level I2C Write
+void DS3231_WriteReg(uint8_t reg, uint8_t val) {
+    // Wait until I2C is not busy
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+
+    // Generate Start
+    I2C_GenerateSTART(DS3231_I2C, ENABLE);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    // Send Address (Write)
+    I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+
+    // Send Register Address
+    I2C_SendData(DS3231_I2C, reg);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    // Send Value
+    I2C_SendData(DS3231_I2C, val);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    // Generate Stop
+    I2C_GenerateSTOP(DS3231_I2C, ENABLE);
+}
+
+// Low-level I2C Read
+uint8_t DS3231_ReadReg(uint8_t reg) {
+    uint8_t val;
+    
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+
+    I2C_GenerateSTART(DS3231_I2C, ENABLE);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+
+    I2C_SendData(DS3231_I2C, reg);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    I2C_GenerateSTART(DS3231_I2C, ENABLE);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Receiver);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+
+    I2C_AcknowledgeConfig(DS3231_I2C, DISABLE);
+    I2C_GenerateSTOP(DS3231_I2C, ENABLE);
+
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_RECEIVED));
+    val = I2C_ReceiveData(DS3231_I2C);
+    
+    I2C_AcknowledgeConfig(DS3231_I2C, ENABLE);
+    
+    return val;
+}
+
+// Burst Read
+void DS3231_ReadBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+
+    I2C_GenerateSTART(DS3231_I2C, ENABLE);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+
+    I2C_SendData(DS3231_I2C, reg);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    I2C_GenerateSTART(DS3231_I2C, ENABLE);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Receiver);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+
+    for(int i = 0; i < count; i++) {
+        if(i == count - 1) {
+            I2C_AcknowledgeConfig(DS3231_I2C, DISABLE);
+            I2C_GenerateSTOP(DS3231_I2C, ENABLE);
+        }
+        
+        while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_RECEIVED));
+        buf[i] = I2C_ReceiveData(DS3231_I2C);
+    }
+    I2C_AcknowledgeConfig(DS3231_I2C, ENABLE);
+}
+
+// Burst Write (Used for Time Set)
+void DS3231_WriteBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
+    while(I2C_GetFlagStatus(DS3231_I2C, I2C_FLAG_BUSY));
+
+    I2C_GenerateSTART(DS3231_I2C, ENABLE);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    I2C_Send7bitAddress(DS3231_I2C, DS3231_ADDRESS, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+
+    I2C_SendData(DS3231_I2C, reg);
+    while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    for(int i=0; i<count; i++) {
+        I2C_SendData(DS3231_I2C, buf[i]);
+        while(!I2C_CheckEvent(DS3231_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    }
+    
+    I2C_GenerateSTOP(DS3231_I2C, ENABLE);
+}
+
+
+void DS3231_Init(void) {
+    // I2C Init is done in main.c
 }
 
 void DS3231_GetTime(RTC_TimeTypeDef *rtc_time) {
     uint8_t buffer[7];
-    HAL_I2C_Mem_Read(&hi2c1, DS3231_ADDRESS, 0x00, 1, buffer, 7, 1000);
+    DS3231_ReadBurst(0x00, buffer, 7);
 
     rtc_time->seconds = bcdToDec(buffer[0]);
     rtc_time->minutes = bcdToDec(buffer[1]);
@@ -40,47 +151,40 @@ void DS3231_SetTime(RTC_TimeTypeDef *rtc_time) {
     buffer[5] = decToBcd(rtc_time->month);
     buffer[6] = decToBcd(rtc_time->year);
 
-    HAL_I2C_Mem_Write(&hi2c1, DS3231_ADDRESS, 0x00, 1, buffer, 7, 1000);
+    DS3231_WriteBurst(0x00, buffer, 7);
 }
 
 void DS3231_ClearAlarmFlags(void) {
     uint8_t status;
-    // 상태 레지스터 읽기 및 A1F, A2F 플래그 클리어 (0으로 씀)
-    HAL_I2C_Mem_Read(&hi2c1, DS3231_ADDRESS, DS3231_STATUS_REG, 1, &status, 1, 100);
+    status = DS3231_ReadReg(DS3231_STATUS_REG);
     status &= ~0x03; // Clear A1F and A2F
-    HAL_I2C_Mem_Write(&hi2c1, DS3231_ADDRESS, DS3231_STATUS_REG, 1, &status, 1, 100);
+    DS3231_WriteReg(DS3231_STATUS_REG, status);
 }
 
-// 매일 특정 시간에 울리는 알람 1 설정 (초 단위 포함)
 void DS3231_SetAlarm1(uint8_t hour, uint8_t min, uint8_t sec) {
     uint8_t buff[4];
-    buff[0] = decToBcd(sec);       // A1M1 = 0 (Match seconds)
-    buff[1] = decToBcd(min);       // A1M2 = 0 (Match minutes)
-    buff[2] = decToBcd(hour);      // A1M3 = 0 (Match hours)
-    buff[3] = 0x80;                // A1M4 = 1 (Day/Date 무시 -> 매일 반복)
+    buff[0] = decToBcd(sec);       
+    buff[1] = decToBcd(min);       
+    buff[2] = decToBcd(hour);      
+    buff[3] = 0x80;                // Day/Date ignored -> Daily match
     
-    HAL_I2C_Mem_Write(&hi2c1, DS3231_ADDRESS, DS3231_ALARM1_ADDR, 1, buff, 4, 100);
+    DS3231_WriteBurst(DS3231_ALARM1_ADDR, buff, 4);
     
-    // 인터럽트 활성화 (INTCN=1, A1IE=1)
-    uint8_t ctrl;
-    HAL_I2C_Mem_Read(&hi2c1, DS3231_ADDRESS, DS3231_CONTROL_REG, 1, &ctrl, 1, 100);
-    ctrl |= 0x05; // INTCN(bit2) | A1IE(bit0)
-    HAL_I2C_Mem_Write(&hi2c1, DS3231_ADDRESS, DS3231_CONTROL_REG, 1, &ctrl, 1, 100);
+    // Enable Interrupt
+    uint8_t ctrl = DS3231_ReadReg(DS3231_CONTROL_REG);
+    ctrl |= 0x05; // INTCN | A1IE
+    DS3231_WriteReg(DS3231_CONTROL_REG, ctrl);
 }
 
 void DS3231_SetAlarm2(uint8_t hour, uint8_t min) {
     uint8_t buff[3];
-    // A2M2 = 0 (분 매치), A2M3 = 0 (시 매치), A2M4 = 1 (요일/날짜 무시 -> 매일)
-    buff[0] = decToBcd(min);   // 분
-    buff[1] = decToBcd(hour);  // 시
-    buff[2] = 0x80;            // 매일 반복
+    buff[0] = decToBcd(min);
+    buff[1] = decToBcd(hour);
+    buff[2] = 0x80;
 
-    HAL_I2C_Mem_Write(&hi2c1, DS3231_ADDRESS,
-                      DS3231_ALARM2_ADDR, 1, buff, 3, 100);
+    DS3231_WriteBurst(DS3231_ALARM2_ADDR, buff, 3);
 
-    // INTCN(bit2) + A2IE(bit1) 활성화
-    uint8_t ctrl;
-    HAL_I2C_Mem_Read(&hi2c1, DS3231_CONTROL_REG, 1, &ctrl, 1, 100);
-    ctrl |= 0x06;   // 0b0000 0110
-    HAL_I2C_Mem_Write(&hi2c1, DS3231_CONTROL_REG, 1, &ctrl, 1, 100);
+    uint8_t ctrl = DS3231_ReadReg(DS3231_CONTROL_REG);
+    ctrl |= 0x06;   // INTCN | A2IE
+    DS3231_WriteReg(DS3231_CONTROL_REG, ctrl);
 }

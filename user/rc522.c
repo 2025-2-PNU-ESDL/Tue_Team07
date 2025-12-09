@@ -1,58 +1,66 @@
 /* Core/Src/rc522.c */
 #include "rc522.h"
-#include "spi.h" // CubeMX가 만든 spi.h 포함
-#include "gpio.h"
+#include "stm32f10x.h"
 
-// 사용하는 SPI 핸들러 (CubeMX 설정에 따라 hspi1 또는 hspi2)
-extern SPI_HandleTypeDef hspi1;
+// External Delay function from main.c
+extern void Delay(__IO uint32_t nTime);
 
-// CS(SS) 핀 설정 (CubeMX에서 PA4를 CS로 설정했다고 가정)
+// CS Pin Configuration
 #define RC522_CS_GPIO GPIOA
-#define RC522_CS_PIN  GPIO_PIN_4
+#define RC522_CS_PIN  GPIO_Pin_4
 
-// 매크로 함수
-#define RC522_CS_LOW  HAL_GPIO_WritePin(RC522_CS_GPIO, RC522_CS_PIN, GPIO_PIN_RESET)
-#define RC522_CS_HIGH HAL_GPIO_WritePin(RC522_CS_GPIO, RC522_CS_PIN, GPIO_PIN_SET)
+// Macro Functions
+#define RC522_CS_LOW  GPIO_ResetBits(RC522_CS_GPIO, RC522_CS_PIN)
+#define RC522_CS_HIGH GPIO_SetBits(RC522_CS_GPIO, RC522_CS_PIN)
 
-// 내부 함수: 레지스터 쓰기
+// SPI Interface (Assumed SPI1 from main.c)
+#define RC522_SPI SPI1
+
+// Helper: SPI Transfer
+uint8_t SPI_ReadWriteByte(uint8_t data) {
+    // Wait until TX buffer is empty
+    while (SPI_I2S_GetFlagStatus(RC522_SPI, SPI_I2S_FLAG_TXE) == RESET);
+    // Send byte
+    SPI_I2S_SendData(RC522_SPI, data);
+    // Wait until RX buffer is not empty
+    while (SPI_I2S_GetFlagStatus(RC522_SPI, SPI_I2S_FLAG_RXNE) == RESET);
+    // Return received byte
+    return SPI_I2S_ReceiveData(RC522_SPI);
+}
+
 void MFRC522_WriteRegister(uint8_t addr, uint8_t val) {
-    uint8_t data[2];
-    data[0] = (addr << 1) & 0x7E;
-    data[1] = val;
+    uint8_t addr_byte = (addr << 1) & 0x7E;
     
     RC522_CS_LOW;
-    HAL_SPI_Transmit(&hspi1, data, 2, 100);
+    SPI_ReadWriteByte(addr_byte);
+    SPI_ReadWriteByte(val);
     RC522_CS_HIGH;
 }
 
-// 내부 함수: 레지스터 읽기
 uint8_t MFRC522_ReadRegister(uint8_t addr) {
-    uint8_t tx_data = ((addr << 1) & 0x7E) | 0x80;
-    uint8_t rx_data;
+    uint8_t addr_byte = ((addr << 1) & 0x7E) | 0x80;
+    uint8_t val;
     
     RC522_CS_LOW;
-    HAL_SPI_Transmit(&hspi1, &tx_data, 1, 100);
-    HAL_SPI_Receive(&hspi1, &rx_data, 1, 100);
+    SPI_ReadWriteByte(addr_byte);
+    val = SPI_ReadWriteByte(0x00); // Dummy write to read
     RC522_CS_HIGH;
     
-    return rx_data;
+    return val;
 }
 
-// 비트 마스크 설정
 void MFRC522_SetBitMask(uint8_t reg, uint8_t mask) {
     uint8_t tmp;
     tmp = MFRC522_ReadRegister(reg);
     MFRC522_WriteRegister(reg, tmp | mask);
 }
 
-// 비트 마스크 해제
 void MFRC522_ClearBitMask(uint8_t reg, uint8_t mask) {
     uint8_t tmp;
     tmp = MFRC522_ReadRegister(reg);
     MFRC522_WriteRegister(reg, tmp & (~mask));
 }
 
-// 안테나 켜기
 void MFRC522_AntennaOn(void) {
     uint8_t temp;
     temp = MFRC522_ReadRegister(MFRC522_REG_TX_CONTROL);
@@ -61,15 +69,13 @@ void MFRC522_AntennaOn(void) {
     }
 }
 
-// 안테나 끄기
 void MFRC522_AntennaOff(void) {
     MFRC522_ClearBitMask(MFRC522_REG_TX_CONTROL, 0x03);
 }
 
-// 초기화 함수
 void MFRC522_Init(void) {
-    MFRC522_WriteRegister(MFRC522_REG_COMMAND, PCD_RESETPHASE); // 소프트 리셋
-    HAL_Delay(10); // 리셋 대기
+    MFRC522_WriteRegister(MFRC522_REG_COMMAND, PCD_RESETPHASE);
+    Delay(10); 
     
     MFRC522_WriteRegister(MFRC522_REG_T_MODE, 0x8D);
     MFRC522_WriteRegister(MFRC522_REG_T_PRESCALER, 0x3E);
@@ -81,7 +87,6 @@ void MFRC522_Init(void) {
     MFRC522_AntennaOn();
 }
 
-// 카드 감지 (Request)
 uint8_t MFRC522_Request(uint8_t reqMode, uint8_t *TagType) {
     uint8_t status;
     uint16_t backBits;
@@ -97,7 +102,6 @@ uint8_t MFRC522_Request(uint8_t reqMode, uint8_t *TagType) {
     return status;
 }
 
-// 카드 통신 (ToCard)
 uint8_t MFRC522_ToCard(uint8_t command, uint8_t *sendData, uint8_t sendLen, uint8_t *backData, uint16_t *backLen) {
     uint8_t status = MI_ERR;
     uint8_t irqEn = 0x00;
@@ -158,7 +162,7 @@ uint8_t MFRC522_ToCard(uint8_t command, uint8_t *sendData, uint8_t sendLen, uint
                 if (n == 0) {
                     n = 1;
                 }
-                if (n > 16) { // Buffer size check
+                if (n > 16) { 
                     n = 16;
                 }
                 for (i = 0; i < n; i++) {
@@ -172,7 +176,6 @@ uint8_t MFRC522_ToCard(uint8_t command, uint8_t *sendData, uint8_t sendLen, uint
     return status;
 }
 
-// 충돌 방지 (Anticollision) - UID 가져오기
 uint8_t MFRC522_Anticoll(uint8_t *SerNum) {
     uint8_t status;
     uint8_t i;
@@ -203,13 +206,12 @@ void MFRC522_Halt(void) {
     MFRC522_ToCard(PCD_TRANSCEIVE, buff, 2, buff, &unLen);
 }
 
-// --- 사용자가 메인에서 호출할 통합 함수 ---
 uint8_t RC522_Check(uint8_t *id) {
     uint8_t status;
-    status = MFRC522_Request(PICC_REQIDL, id); // 1. 카드 있나 확인
+    status = MFRC522_Request(PICC_REQIDL, id); 
     if (status == MI_OK) {
-        status = MFRC522_Anticoll(id); // 2. 있으면 UID 읽기
+        status = MFRC522_Anticoll(id); 
     }
-    MFRC522_Halt(); // 3. 통신 종료 (다음 인식을 위해)
+    MFRC522_Halt(); 
     return status;
 }

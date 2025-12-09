@@ -18,7 +18,8 @@ typedef struct {
 } RTC_TimeTypeDef;
 
 // 함수 원형
-void DS3231_Init(I2C_HandleTypeDef *hi2c);
+// void DS3231_Init(I2C_HandleTypeDef *hi2c);
+void DS3231_Init(void);
 void DS3231_GetTime(RTC_TimeTypeDef *rtc_time);
 void DS3231_SetTime(RTC_TimeTypeDef *rtc_time);
 

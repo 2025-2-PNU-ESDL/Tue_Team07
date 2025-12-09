@@ -1,9 +1,14 @@
 #include "ssd1306.h"
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>  // For memcpy
+#include <string.h> 
+
+extern void Delay(__IO uint32_t nTime);
 
 #if defined(SSD1306_USE_I2C)
+
+// Assumed I2C1 from main.c
+#define SSD1306_I2C I2C1
 
 void ssd1306_Reset(void) {
     /* for I2C - do nothing */
@@ -11,42 +16,50 @@ void ssd1306_Reset(void) {
 
 // Send a byte to the command register
 void ssd1306_WriteCommand(uint8_t byte) {
-    HAL_I2C_Mem_Write(&SSD1306_I2C_PORT, SSD1306_I2C_ADDR, 0x00, 1, &byte, 1, HAL_MAX_DELAY);
+    while(I2C_GetFlagStatus(SSD1306_I2C, I2C_FLAG_BUSY));
+
+    I2C_GenerateSTART(SSD1306_I2C, ENABLE);
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    I2C_Send7bitAddress(SSD1306_I2C, SSD1306_I2C_ADDR, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+
+    // Control Byte (0x00 for Command)
+    I2C_SendData(SSD1306_I2C, 0x00);
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    // Command
+    I2C_SendData(SSD1306_I2C, byte);
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    I2C_GenerateSTOP(SSD1306_I2C, ENABLE);
 }
 
 // Send data
 void ssd1306_WriteData(uint8_t* buffer, size_t buff_size) {
-    HAL_I2C_Mem_Write(&SSD1306_I2C_PORT, SSD1306_I2C_ADDR, 0x40, 1, buffer, buff_size, HAL_MAX_DELAY);
+    while(I2C_GetFlagStatus(SSD1306_I2C, I2C_FLAG_BUSY));
+
+    I2C_GenerateSTART(SSD1306_I2C, ENABLE);
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_MODE_SELECT));
+
+    I2C_Send7bitAddress(SSD1306_I2C, SSD1306_I2C_ADDR, I2C_Direction_Transmitter);
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+
+    // Control Byte (0x40 for Data)
+    I2C_SendData(SSD1306_I2C, 0x40);
+    while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+    for(size_t i=0; i<buff_size; i++) {
+        I2C_SendData(SSD1306_I2C, buffer[i]);
+        while(!I2C_CheckEvent(SSD1306_I2C, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    }
+
+    I2C_GenerateSTOP(SSD1306_I2C, ENABLE);
 }
 
 #elif defined(SSD1306_USE_SPI)
-
-void ssd1306_Reset(void) {
-    // CS = High (not selected)
-    HAL_GPIO_WritePin(SSD1306_CS_Port, SSD1306_CS_Pin, GPIO_PIN_SET);
-
-    // Reset the OLED
-    HAL_GPIO_WritePin(SSD1306_Reset_Port, SSD1306_Reset_Pin, GPIO_PIN_RESET);
-    HAL_Delay(10);
-    HAL_GPIO_WritePin(SSD1306_Reset_Port, SSD1306_Reset_Pin, GPIO_PIN_SET);
-    HAL_Delay(10);
-}
-
-// Send a byte to the command register
-void ssd1306_WriteCommand(uint8_t byte) {
-    HAL_GPIO_WritePin(SSD1306_CS_Port, SSD1306_CS_Pin, GPIO_PIN_RESET); // select OLED
-    HAL_GPIO_WritePin(SSD1306_DC_Port, SSD1306_DC_Pin, GPIO_PIN_RESET); // command
-    HAL_SPI_Transmit(&SSD1306_SPI_PORT, (uint8_t *) &byte, 1, HAL_MAX_DELAY);
-    HAL_GPIO_WritePin(SSD1306_CS_Port, SSD1306_CS_Pin, GPIO_PIN_SET); // un-select OLED
-}
-
-// Send data
-void ssd1306_WriteData(uint8_t* buffer, size_t buff_size) {
-    HAL_GPIO_WritePin(SSD1306_CS_Port, SSD1306_CS_Pin, GPIO_PIN_RESET); // select OLED
-    HAL_GPIO_WritePin(SSD1306_DC_Port, SSD1306_DC_Pin, GPIO_PIN_SET); // data
-    HAL_SPI_Transmit(&SSD1306_SPI_PORT, buffer, buff_size, HAL_MAX_DELAY);
-    HAL_GPIO_WritePin(SSD1306_CS_Port, SSD1306_CS_Pin, GPIO_PIN_SET); // un-select OLED
-}
+// SPI implementation not required/ported for this context
+#error "SPI not supported in this SPL port yet"
 
 #else
 #error "You should define SSD1306_USE_SPI or SSD1306_USE_I2C macro"
@@ -75,7 +88,7 @@ void ssd1306_Init(void) {
     ssd1306_Reset();
 
     // Wait for the screen to boot
-    HAL_Delay(100);
+    Delay(100);
 
     // Init OLED
     ssd1306_SetDisplayOn(0); //display off
