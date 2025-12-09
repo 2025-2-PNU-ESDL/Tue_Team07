@@ -225,6 +225,12 @@ int main(void)
                 ssd1306_SetCursor(0, 30);
                 ssd1306_WriteString(str_buff, Font_11x18, White);
 
+                // 블루투스
+                uint8_t uart_buff[64];
+                sprintf((char*)uart_buff, "UNKNOWN,%02X%02X%02X%02X\r\n",
+                        uid[0], uid[1], uid[2], uid[3]);
+                HAL_UART_Transmit(&huart1, uart_buff, strlen((char*)uart_buff), 100);
+
                 // 노랑 LED (Red+Green) + 부저 1회 
                 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_SET); 
                 Beep(1);
