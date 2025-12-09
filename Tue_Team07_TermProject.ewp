@@ -341,12 +341,12 @@
                 </option>
                 <option>
                     <name>CCIncludePath2</name>
-                    <state>C:\Users\pnu7\Desktop\Tue_Team07\Libraries\CMSIS</state>
-                    <state>C:\Users\pnu7\Desktop\project_test (2)\Libraries\CMSIS\DeviceSupport\Startup</state>
-                    <state>C:\Users\pnu7\Desktop\Tue_Team07\Libraries\STM32F10x_StdPeriph_Driver_v3.5\inc</state>
-                    <state>C:\Users\pnu7\Desktop\Tue_Team07\Libraries\STM32F10x_StdPeriph_Driver_v3.5\src</state>
-                    <state>C:\Users\pnu7\Desktop\Tue_Team07\user</state>
-                    <state>C:\Users\pnu7\Desktop\Tue_Team07\user\inc</state>
+                    <state>$PROJ_DIR$\Libraries\CMSIS\DeviceSupport</state>
+                    <state>$PROJ_DIR$\Libraries\CMSIS\DeviceSupport\Startup</state>
+                    <state>$PROJ_DIR$\Libraries\STM32F10x_StdPeriph_Driver_v3.5\inc</state>
+                    <state>$PROJ_DIR$\Libraries\STM32F10x_StdPeriph_Driver_v3.5\src</state>
+                    <state>$PROJ_DIR$\user</state>
+                    <state>$PROJ_DIR$\user\inc</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2263,9 +2263,6 @@
         </file>
         <file>
             <name>$PROJ_DIR$\user\stm32f10x_it.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\user\term_test.c</name>
         </file>
     </group>
 </project>
