@@ -2590,8 +2590,5 @@
         <file>
             <name>$PROJ_DIR$\user\stm32f10x_it.c</name>
         </file>
-        <file>
-            <name>$PROJ_DIR$\user\term_test.c</name>
-        </file>
     </group>
 </project>

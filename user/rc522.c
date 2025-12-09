@@ -87,21 +87,6 @@ void MFRC522_Init(void) {
     MFRC522_AntennaOn();
 }
 
-uint8_t MFRC522_Request(uint8_t reqMode, uint8_t *TagType) {
-    uint8_t status;
-    uint16_t backBits;
-    
-    MFRC522_WriteRegister(MFRC522_REG_BIT_FRAMING, 0x07);
-    TagType[0] = reqMode;
-    
-    status = MFRC522_ToCard(PCD_TRANSCEIVE, TagType, 1, TagType, &backBits);
-    
-    if ((status != MI_OK) || (backBits != 0x10)) {
-        status = MI_ERR;
-    }
-    return status;
-}
-
 uint8_t MFRC522_ToCard(uint8_t command, uint8_t *sendData, uint8_t sendLen, uint8_t *backData, uint16_t *backLen) {
     uint8_t status = MI_ERR;
     uint8_t irqEn = 0x00;
@@ -172,6 +157,21 @@ uint8_t MFRC522_ToCard(uint8_t command, uint8_t *sendData, uint8_t sendLen, uint
         } else {
             status = MI_ERR;
         }
+    }
+    return status;
+}
+
+uint8_t MFRC522_Request(uint8_t reqMode, uint8_t *TagType) {
+    uint8_t status;
+    uint16_t backBits;
+    
+    MFRC522_WriteRegister(MFRC522_REG_BIT_FRAMING, 0x07);
+    TagType[0] = reqMode;
+    
+    status = MFRC522_ToCard(PCD_TRANSCEIVE, TagType, 1, TagType, &backBits);
+    
+    if ((status != MI_OK) || (backBits != 0x10)) {
+        status = MI_ERR;
     }
     return status;
 }

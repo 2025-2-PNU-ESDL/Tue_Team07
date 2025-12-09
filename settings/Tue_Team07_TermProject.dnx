@@ -11,10 +11,6 @@
         <LimitSize>0</LimitSize>
         <ByteLimit>50</ByteLimit>
     </Stack>
-    <Trace1>
-        <Enabled>0</Enabled>
-        <ShowSource>1</ShowSource>
-    </Trace1>
     <InterruptLog>
         <LogEnabled>0</LogEnabled>
         <GraphEnabled>0</GraphEnabled>
@@ -45,18 +41,60 @@
         <FreqHi>0</FreqHi>
         <MultiCoreRunAll>1</MultiCoreRunAll>
     </Simulator>
+    <JLinkDriver>
+        <CStepIntDis>_ 0</CStepIntDis>
+        <LeaveTargetRunning>_ 0</LeaveTargetRunning>
+    </JLinkDriver>
+    <DebugChecksum>
+        <Checksum>925794020</Checksum>
+    </DebugChecksum>
+    <CodeCoverage>
+        <Enabled>_ 0</Enabled>
+    </CodeCoverage>
+    <Trace1>
+        <Enabled>0</Enabled>
+        <ShowSource>1</ShowSource>
+    </Trace1>
+    <Disassembly>
+        <InstrCount>0</InstrCount>
+    </Disassembly>
     <DisassembleMode>
         <mode>0</mode>
     </DisassembleMode>
     <Breakpoints2>
         <Count>0</Count>
     </Breakpoints2>
+    <LogFile>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+        <Category>_ 0</Category>
+    </LogFile>
+    <Exceptions>
+        <StopOnUncaught>_ 0</StopOnUncaught>
+        <StopOnThrow>_ 0</StopOnThrow>
+    </Exceptions>
+    <TermIOLog>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+    </TermIOLog>
     <Aliases>
         <Count>0</Count>
         <SuppressDialog>0</SuppressDialog>
     </Aliases>
-    <JLinkDriver>
-        <CStepIntDis>_ 0</CStepIntDis>
-        <LeaveTargetRunning>_ 0</LeaveTargetRunning>
-    </JLinkDriver>
+    <CallStack>
+        <ShowArgs>0</ShowArgs>
+    </CallStack>
+    <DriverProfiling>
+        <Enabled>0</Enabled>
+        <Mode>1</Mode>
+        <Graph>0</Graph>
+        <Symbiont>0</Symbiont>
+        <Exclusions />
+    </DriverProfiling>
+    <CallStackLog>
+        <Enabled>0</Enabled>
+    </CallStackLog>
+    <CallStackStripe>
+        <ShowTiming>1</ShowTiming>
+    </CallStackStripe>
 </settings>
