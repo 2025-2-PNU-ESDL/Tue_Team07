@@ -58,7 +58,7 @@ void DS3231_WriteReg(uint8_t reg, uint8_t val) {
 
 // Low-level I2C Read
 uint8_t DS3231_ReadReg(uint8_t reg) {
-    //if (DS3231_I2C_Error) return 0;
+    if (DS3231_I2C_Error) return 0;
     
     uint8_t val = 0;
     uint32_t timeout = DS3231_TIMEOUT;
@@ -203,8 +203,9 @@ void DS3231_WriteBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
     I2C_GenerateSTOP(DS3231_I2C, ENABLE);
 }
 
-
 void DS3231_Init(RTC_TimeTypeDef *rtc_time) {
+    DS3231_I2C_Error = 0;
+
     rtc_time->seconds    = 50;
     rtc_time->minutes    = 59;   // 여기에 실제 분
     rtc_time->hours      = 8;   // 여기에 실제 시 (24시간제)
@@ -212,6 +213,8 @@ void DS3231_Init(RTC_TimeTypeDef *rtc_time) {
     rtc_time->dayofmonth = 10;   // 날짜
     rtc_time->month      = 12;   // 월
     rtc_time->year       = 25;   // 2024 -> 24
+
+    I2C_AcknowledgeConfig(DS3231_I2C, ENABLE);
 }
 
 void DS3231_GetTime(RTC_TimeTypeDef *rtc_time) {
@@ -275,6 +278,9 @@ void DS3231_SetAlarm2(uint8_t hour, uint8_t min) {
     DS3231_WriteReg(DS3231_CONTROL_REG, ctrl);
 }
 
+void DS3231_ResetI2CError(void) {
+    DS3231_I2C_Error = 0;
+}
 uint8_t DS3231_GetI2CError(void) {
     return DS3231_I2C_Error;
 }

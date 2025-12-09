@@ -1,8 +1,6 @@
 #include "stm32f10x.h"
 #include "rc522.h"
 #include "ds3231.h"
-#include "ssd1306.h"
-#include "ssd1306_fonts.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -70,13 +68,20 @@ int main(void)
     // Module Init
     DS3231_Init(&sTime);
     DS3231_SetTime(&sTime);
-
+    
     MFRC522_Init();
-    ssd1306_Init();
 
     // RTC Alarm Setup (Example: 09:00:00)
     DS3231_SetAlarm1(9, 0, 0);
     DS3231_ClearAlarmFlags();
+
+    // I2C 에러 확인
+    char msg[64];
+    sprintf(msg, "After SetTime: err=%d\r\n", DS3231_GetI2CError());
+    for (int k = 0; msg[k]; k++) {
+        USART_SendData(USART1, msg[k]);
+        while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+    }
 
     // Initial Screen
     Display_Idle_Screen();
@@ -233,6 +238,18 @@ int main(void)
                     break;
             }
         }
+        
+    //   DS3231_GetTime(&sTime);
+    //   // "SYSTEM IDLE" + 현재 시각 로그로 출력
+    //   char msg[64];
+    //   sprintf(msg, "SYSTEM IDLE %02d:%02d:%02d (err=%d)\r\n",
+    //           sTime.hours, sTime.minutes, sTime.seconds, DS3231_GetI2CError());
+
+    //   for (int k = 0; k < (int)strlen(msg); k++) {
+    //       USART_SendData(USART1, msg[k]);
+    //       while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+    //   }
+    //   Delay(100);
     }
 }
 
@@ -251,6 +268,7 @@ void Beep(int count)
 
 void Display_Idle_Screen(void)
 {
+    DS3231_ResetI2CError();
     DS3231_GetTime(&sTime);
 
     // "SYSTEM IDLE" + 현재 시각 로그로 출력
@@ -330,7 +348,7 @@ void GPIO_Configuration(void)
 
     /* SPI1 MISO (PA6) */
     GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_6;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     /* RC522 CS (PA4) - Software Control */
