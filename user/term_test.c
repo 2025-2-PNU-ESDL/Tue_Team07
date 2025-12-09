@@ -177,7 +177,6 @@ int main(void)
                 }
             }
 
-            // 2. 현재 시간 가져오기 (지각 판정용) [cite: 129]
             // 2. 현재 시간 가져오기 (지각 판정용)
             DS3231_GetTime(&sTime);
             ssd1306_Fill(Black);
@@ -219,6 +218,13 @@ int main(void)
                 ssd1306_SetCursor(10, 20);
                 ssd1306_WriteString("UNKNOWN TAG", Font_11x18, White);
                 
+                // uid 확인용
+                 sprintf(str_buff,
+                        "%02X %02X %02X %02X",
+                        uid[0], uid[1], uid[2], uid[3]);
+                ssd1306_SetCursor(0, 30);
+                ssd1306_WriteString(str_buff, Font_11x18, White);
+
                 // 노랑 LED (Red+Green) + 부저 1회 
                 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_SET); 
                 Beep(1);
