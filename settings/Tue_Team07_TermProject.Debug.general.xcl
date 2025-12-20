@@ -1,11 +1,15 @@
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\arm\bin\armproc.dll" 
+E:\iar\ewarm-9.70.2\arm\bin\armproc.dll
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\arm\bin\armjlink2.dll" 
+ E:\iar\ewarm-9.70.2\arm\bin\armjlink.dll
 
-"C:\Users\pnu7\Desktop\Tue_Team07\Debug\Exe\Tue_Team07_TermProject.out" 
+ C:\Users\이나영\Desktop\Tue_Team07-main\Debug\Exe\Tue_Team07_TermProject.out
 
---plugin "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\arm\bin\armbat.dll" 
+ --plugin=E:\iar\ewarm-9.70.2\arm\bin\armLibSupportUniversal.dll
 
+ --device_macro=E:\iar\ewarm-9.70.2\arm/config/debugger/ST/STM32F1xx.dmac
 
+ --flash_loader=E:\iar\ewarm-9.70.2\arm/config/flashloader/ST/FlashSTM32F105xC.board
+
+ 
 
 
