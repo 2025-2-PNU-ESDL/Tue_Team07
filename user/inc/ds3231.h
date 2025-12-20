@@ -25,7 +25,8 @@ void DS3231_SetTime(RTC_TimeTypeDef *rtc_time);
 
 // 알람 설정용 구조체 및 함수 추가
 void DS3231_SetAlarm1(uint8_t hour, uint8_t min, uint8_t sec); // 시작 시간 (매일)
-void DS3231_SetAlarm2(uint8_t hour, uint8_t min);             // 마감 시간 (매일)
+void DS3231_SetAlarm2(uint8_t hour, uint8_t min, uint8_t sec); // 지각 기준 시간 (매일)
+void DS3231_SetAlarm3(uint8_t hour, uint8_t min, uint8_t sec); // 소프트웨어 알람 (마감 시간용)
 void DS3231_ClearAlarmFlags(void);                            // 인터럽트 플래그 초기화
 
 uint8_t DS3231_GetI2CError(void);

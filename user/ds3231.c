@@ -206,7 +206,7 @@ void DS3231_WriteBurst(uint8_t reg, uint8_t *buf, uint16_t count) {
 void DS3231_Init(RTC_TimeTypeDef *rtc_time) {
     DS3231_I2C_Error = 0;
 
-    rtc_time->seconds    = 45;
+    rtc_time->seconds    = 55;
     rtc_time->minutes    = 59;   // 여기에 실제 분
     rtc_time->hours      = 8;   // 여기에 실제 시 (24시간제)
     rtc_time->dayofweek  = 3;    // 1~7 아무거나
@@ -265,8 +265,9 @@ void DS3231_SetAlarm1(uint8_t hour, uint8_t min, uint8_t sec) {
     DS3231_WriteReg(DS3231_CONTROL_REG, ctrl);
 }
 
-void DS3231_SetAlarm2(uint8_t hour, uint8_t min) {
+void DS3231_SetAlarm2(uint8_t hour, uint8_t min, uint8_t sec) {
     uint8_t buff[3];
+    // DS3231 하드웨어 Alarm 2는 '초' 단위 레지스터가 없어 분/시만 설정 가능합니다.
     buff[0] = decToBcd(min);
     buff[1] = decToBcd(hour);
     buff[2] = 0x80;
@@ -276,6 +277,12 @@ void DS3231_SetAlarm2(uint8_t hour, uint8_t min) {
     uint8_t ctrl = DS3231_ReadReg(DS3231_CONTROL_REG);
     ctrl |= 0x06;   // INTCN | A2IE
     DS3231_WriteReg(DS3231_CONTROL_REG, ctrl);
+}
+
+void DS3231_SetAlarm3(uint8_t hour, uint8_t min, uint8_t sec) {
+    // DS3231은 하드웨어 알람이 2개뿐이므로, Alarm 3는 소프트웨어적으로 처리합니다.
+    // 따라서 실제 I2C 레지스터 설정은 수행하지 않습니다.
+    // 이 함수는 인터페이스 통일성을 위해 존재합니다.
 }
 
 void DS3231_ResetI2CError(void) {
