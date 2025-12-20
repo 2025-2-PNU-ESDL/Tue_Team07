@@ -23,9 +23,9 @@
 
 if ($debugfile -eq "")
 {
-& "E:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.general.xcl" --backend -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
+& "C:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.general.xcl" --backend -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
 }
 else
 {
-& "E:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.general.xcl" --debug_file=$debugfile --backend -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
+& "C:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.general.xcl" --debug_file=$debugfile --backend -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
 }

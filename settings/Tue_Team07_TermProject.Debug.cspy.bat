@@ -25,7 +25,7 @@ if not "%~1" == "" goto debugFile
 
 @echo on 
 
-"E:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.general.xcl" --backend -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
+"C:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.general.xcl" --backend -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
 
 @echo off 
 goto end 
@@ -34,7 +34,7 @@ goto end
 
 @echo on 
 
-"E:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.general.xcl" "--debug_file=%~1" --backend -f "C:\Users\이나영\Desktop\Tue_Team07-main\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
+"C:\iar\ewarm-9.70.2\common\bin\cspybat" -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.general.xcl" "--debug_file=%~1" --backend -f "C:\Users\kkj48\Desktop\Projects\Tue_Team07\settings\Tue_Team07_TermProject.Debug.driver.xcl" 
 
 @echo off 
 :end
